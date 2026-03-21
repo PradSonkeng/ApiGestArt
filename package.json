@@ -1,0 +1,21 @@
+{
+  "name": "api-gest-art",
+  "version": "1.0.0",
+  "description": "Serveur API REST pour gérer un blog simple permettant la gestion des articles",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "server",
+    "api",
+    "rest",
+    "gestion",
+    "article"
+  ],
+  "author": "Prad Sonkeng",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
