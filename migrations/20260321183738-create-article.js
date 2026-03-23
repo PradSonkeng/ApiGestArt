@@ -17,6 +17,10 @@ module.exports = {
       	allowNull: false,
         type: Sequelize.STRING
       },
+      date: {
+      	allowNull: false,
+        type: Sequelize.DATE
+      },
       categorie: {
       	allowNull: false,
         type: Sequelize.STRING
