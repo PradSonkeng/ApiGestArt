@@ -11,6 +11,9 @@ exports.router = (function() {
         .post(articlesCtrl.register)
         .get(articlesCtrl.getAll);
 
+    apiRouter.route('/articles/search')
+        .get(articlesCtrl.search);
+
     apiRouter.route('/articles/:id')
         .get(articlesCtrl.getById)
         .put(articlesCtrl.updateById)

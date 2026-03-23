@@ -230,6 +230,35 @@ module.exports = {
                 return res.status(500).json({'error':'cannot delete article'});
             }
         });
+    },
+    // search articles by title oder content
+    search :function(req, res) {
+        var query = req.query.query;
+
+        if(query == null || query.trim() === '') { // validate search query
+            return res.status(400).json({'error':'missing search query'});
+        }
+
+        models.Article.findAll({
+            where: {
+                [models.Sequelize.Op.or]: [ // search in title and content
+                    { titre: { [models.Sequelize.Op.like]: `%${query}%` } },
+                    { contenu: { [models.Sequelize.Op.like]: `%${query}%` } }
+                ]
+            },
+            order: [['date', 'DESC']],
+            attributes: ['id', 'titre', 'contenu', 'auteur', 'date', 'categorie', 'tags']
+        })
+        .then(function(articles) {
+            if(articles && articles.length > 0) {
+                res.status(201).json({'articles': articles});
+            } else {
+                res.status(404).json({'error':'no articles found matching the query'});
+            }
+        })
+        .catch(function(err) {
+            res.status(500).json({'error':'unable to perform search'});
+        });
     }
     
 };
