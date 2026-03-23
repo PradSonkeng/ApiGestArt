@@ -12,7 +12,9 @@ exports.router = (function() {
         .get(articlesCtrl.getAll);
 
     apiRouter.route('/articles/:id')
-        .get(articlesCtrl.getById);
+        .get(articlesCtrl.getById)
+        .put(articlesCtrl.updateById)
+        .delete(articlesCtrl.deleteById);
     
     
     return apiRouter;

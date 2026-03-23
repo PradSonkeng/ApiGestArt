@@ -13,13 +13,17 @@ module.exports = {
       	allowNull: false,
         type: Sequelize.STRING
       },
+      contenu: {
+      	allowNull: false,
+        type: Sequelize.TEXT
+      },
       auteur: {
       	allowNull: false,
         type: Sequelize.STRING
       },
       date: {
       	allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATEONLY
       },
       categorie: {
       	allowNull: false,
