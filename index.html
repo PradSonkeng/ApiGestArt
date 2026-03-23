@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SKHP · GestArt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+  /* ── RESET & TOKENS ────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0a0a0a;
+    --surface: #111111;
+    --card:    #161616;
+    --border:  #252525;
+    --border2: #333333;
+    --white:   #f5f5f0;
+    --grey:    #888888;
+    --grey2:   #555555;
+    --accent:  #f5f5f0;
+    --red:     #ff3b3b;
+    --green:   #3bff8a;
+
+    --font-display: 'Syne', sans-serif;
+    --font-mono:    'Space Mono', monospace;
+
+    --radius: 3px;
+    --gap: 24px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SCANLINES OVERLAY ─────────────────────────────── */
+  body::before {
+    content:'';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,.018) 2px,
+      rgba(255,255,255,.018) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── NAV ───────────────────────────────────────────── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 40px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,10,.92);
+    backdrop-filter: blur(10px);
+  }
+
+  .nav-brand {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -.5px;
+    color: var(--white);
+    text-decoration: none;
+  }
+
+  .nav-brand span {
+    color: var(--grey);
+    font-weight: 400;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    display: block;
+    margin-top: -4px;
+  }
+
+  .nav-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--grey);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--grey2);
+    transition: background .3s;
+  }
+
+  .status-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.error  { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+
+  /* ── MAIN LAYOUT ───────────────────────────────────── */
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: calc(100vh - 61px);
+  }
+
+  /* ── SIDEBAR ───────────────────────────────────────── */
+  aside {
+    border-right: 1px solid var(--border);
+    padding: 32px 0;
+    position: sticky;
+    top: 61px;
+    height: calc(100vh - 61px);
+    overflow-y: auto;
+  }
+
+  .sidebar-section { padding: 0 28px 24px; }
+
+  .sidebar-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--grey2);
+    margin-bottom: 12px;
+  }
+
+  .sidebar-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    color: var(--grey);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all .15s;
+    margin-bottom: 4px;
+  }
+
+  .sidebar-btn:hover { color: var(--white); background: rgba(255,255,255,.04); }
+
+  .sidebar-btn.active {
+    color: var(--white);
+    background: rgba(255,255,255,.07);
+    border-color: var(--border2);
+  }
+
+  .sidebar-btn .method {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+
+  .method-post { background: rgba(59,255,138,.15); color: var(--green); }
+  .method-get  { background: rgba(245,245,240,.1);  color: var(--grey); }
+  .method-put  { background: rgba(255,200,59,.15);  color: #ffc83b; }
+  .method-del  { background: rgba(255,59,59,.15);   color: var(--red); }
+
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 28px 24px;
+  }
+
+  /* API URL config */
+  .api-config { padding: 0 28px 32px; }
+
+  .input-group { margin-bottom: 12px; }
+
+  .input-label {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--grey2);
+    margin-bottom: 6px;
+  }
+
+  .input-field {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--white);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    outline: none;
+    transition: border-color .15s;
+  }
+
+  .input-field:focus { border-color: var(--border2); }
+
+  /* ── MAIN PANEL ────────────────────────────────────── */
+  main {
+    padding: 40px;
+    overflow-y: auto;
+    max-height: calc(100vh - 61px);
+  }
+
+  /* ── SECTION HEADER ────────────────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1.1;
+  }
+
+  .section-sub {
+    font-size: 11px;
+    color: var(--grey);
+    margin-top: 6px;
+    letter-spacing: .5px;
+  }
+
+  .method-badge {
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  /* ── FORM ──────────────────────────────────────────── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .form-grid.single { grid-template-columns: 1fr; }
+  .form-grid.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+  .form-field { display: flex; flex-direction: column; gap: 6px; }
+
+  label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--grey2);
+  }
+
+  input, textarea, select {
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--white);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    outline: none;
+    transition: all .15s;
+    width: 100%;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--white);
+    background: var(--card);
+  }
+
+  textarea { resize: vertical; min-height: 100px; }
+
+  select option { background: var(--surface); }
+
+  /* ── BUTTONS ───────────────────────────────────────── */
+  .btn {
+    padding: 11px 24px;
+    border: 1px solid;
+    border-radius: var(--radius);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--white);
+    border-color: var(--white);
+    color: var(--bg);
+  }
+
+  .btn-primary:hover { background: #ddd; border-color: #ddd; }
+  .btn-primary:active { transform: scale(.98); }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--border2);
+    color: var(--grey);
+  }
+
+  .btn-ghost:hover { color: var(--white); border-color: var(--white); }
+
+  .btn-danger {
+    background: transparent;
+    border-color: rgba(255,59,59,.4);
+    color: var(--red);
+  }
+
+  .btn-danger:hover { background: rgba(255,59,59,.1); }
+
+  .btn-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  /* ── RESPONSE PANEL ────────────────────────────────── */
+  .response-panel {
+    margin-top: 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .response-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--grey);
+  }
+
+  .response-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-code {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  .status-2xx { background: rgba(59,255,138,.15); color: var(--green); }
+  .status-4xx { background: rgba(255,200,59,.15);  color: #ffc83b; }
+  .status-5xx { background: rgba(255,59,59,.15);   color: var(--red); }
+
+  .response-body {
+    padding: 20px;
+    background: var(--card);
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 400px;
+    overflow-y: auto;
+    color: var(--white);
+    min-height: 60px;
+    line-height: 1.8;
+  }
+
+  .response-empty {
+    color: var(--grey2);
+    font-style: italic;
+  }
+
+  /* ── ARTICLES GRID ─────────────────────────────────── */
+  .articles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+
+  .article-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    background: var(--card);
+    transition: all .2s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .article-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 2px;
+    height: 100%;
+    background: transparent;
+    transition: background .2s;
+  }
+
+  .article-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .article-card:hover::before { background: var(--white); }
+
+  .article-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 9px;
+    padding: 2px 8px;
+    border: 1px solid var(--border2);
+    border-radius: 2px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--grey);
+  }
+
+  .article-id {
+    font-size: 9px;
+    color: var(--grey2);
+    letter-spacing: 1px;
+    margin-left: auto;
+  }
+
+  .article-card h3 {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .article-card p {
+    color: var(--grey);
+    font-size: 11px;
+    line-height: 1.7;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .article-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .article-author {
+    font-size: 10px;
+    color: var(--grey2);
+    letter-spacing: .5px;
+  }
+
+  .article-date {
+    font-size: 10px;
+    color: var(--grey2);
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .card-btn {
+    flex: 1;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--grey);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .15s;
+    text-align: center;
+  }
+
+  .card-btn:hover { color: var(--white); border-color: var(--border2); }
+  .card-btn.edit:hover { color: #ffc83b; border-color: rgba(255,200,59,.4); }
+  .card-btn.del:hover  { color: var(--red); border-color: rgba(255,59,59,.4); }
+
+  /* ── LOADING ───────────────────────────────────────── */
+  .loading {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--white);
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── TOAST ─────────────────────────────────────────── */
+  .toast-container {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    padding: 12px 18px;
+    border: 1px solid;
+    border-radius: var(--radius);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .5px;
+    animation: toastIn .2s ease-out;
+    backdrop-filter: blur(8px);
+    max-width: 320px;
+  }
+
+  .toast-success {
+    background: rgba(59,255,138,.1);
+    border-color: rgba(59,255,138,.3);
+    color: var(--green);
+  }
+
+  .toast-error {
+    background: rgba(255,59,59,.1);
+    border-color: rgba(255,59,59,.3);
+    color: var(--red);
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── MODAL ─────────────────────────────────────────── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.8);
+    z-index: 200;
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 36px;
+    width: 540px;
+    max-width: 95vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: modalIn .2s ease-out;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: var(--grey);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    transition: color .15s;
+  }
+
+  .modal-close:hover { color: var(--white); }
+
+  /* ── SEARCH BAR ────────────────────────────────────── */
+  .search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .search-bar input { flex: 1; }
+
+  /* ── FILTERS ───────────────────────────────────────── */
+  .filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .filter-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    color: var(--grey);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .filter-field input, .filter-field select {
+    width: 140px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  /* ── EMPTY STATE ───────────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 80px 40px;
+    color: var(--grey2);
+  }
+
+  .empty-state .empty-icon {
+    font-size: 40px;
+    margin-bottom: 16px;
+    opacity: .3;
+  }
+
+  .empty-state p { font-size: 12px; letter-spacing: 1px; }
+
+  /* ── TABS ──────────────────────────────────────────── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── HERO ──────────────────────────────────────────── */
+  .hero {
+    padding: 60px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .hero-eyebrow {
+    font-size: 9px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--grey2);
+    margin-bottom: 12px;
+  }
+
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  .hero-sub {
+    font-size: 12px;
+    color: var(--grey);
+    max-width: 420px;
+    line-height: 1.8;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 32px;
+    margin-top: 28px;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-val {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--grey2);
+  }
+
+  /* ── SCROLLBAR ─────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--grey2); }
+
+  /* ── RESPONSIVE ────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { display: none; }
+    main { padding: 20px; }
+    .hero-title { font-size: 32px; }
+    .form-grid { grid-template-columns: 1fr; }
+    nav { padding: 16px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ─────────────────────────────────────────────── -->
+<nav>
+  <a href="#" class="nav-brand" onclick="showPanel('home')">
+    SKHP
+    <span>GestArt · API Console</span>
+  </a>
+  <div class="nav-status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">non connecté</span>
+  </div>
+</nav>
+
+<!-- ── LAYOUT ──────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="api-config">
+      <div class="sidebar-label">Configuration</div>
+      <div class="input-group">
+        <label class="input-label">Base URL</label>
+        <input class="input-field" id="baseUrl" type="text"
+          value="https://your-api.onrender.com/api"
+          placeholder="https://api.onrender.com/api"/>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="pingApi()">
+        <span id="pingBtn">Tester la connexion</span>
+      </button>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Endpoints</div>
+
+      <button class="sidebar-btn active" onclick="showPanel('home')" id="tab-home">
+        <span class="method method-get">·</span>
+        Tableau de bord
+      </button>
+
+      <button class="sidebar-btn" onclick="showPanel('list')" id="tab-list">
+        <span class="method method-get">GET</span>
+        /articles
+      </button>
+
+      <button class="sidebar-btn" onclick="showPanel('search')" id="tab-search">
+        <span class="method method-get">GET</span>
+        /articles/search
+      </button>
+
+      <button class="sidebar-btn" onclick="showPanel('getById')" id="tab-getById">
+        <span class="method method-get">GET</span>
+        /articles/:id
+      </button>
+
+      <button class="sidebar-btn" onclick="showPanel('create')" id="tab-create">
+        <span class="method method-post">POST</span>
+        /articles
+      </button>
+
+      <button class="sidebar-btn" onclick="showPanel('update')" id="tab-update">
+        <span class="method method-put">PUT</span>
+        /articles/:id
+      </button>
+
+      <button class="sidebar-btn" onclick="showPanel('delete')" id="tab-delete">
+        <span class="method method-del">DEL</span>
+        /articles/:id
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- ── HOME ─────────────────────────────────────────── -->
+    <div class="tab-panel active" id="panel-home">
+      <div class="hero">
+        <div class="hero-eyebrow">SKHP · PradSonkeng</div>
+        <div class="hero-title">GestArt<br/>Console</div>
+        <div class="hero-sub">Interface de gestion des articles. Configurez votre URL d'API dans la sidebar, testez la connexion, puis explorez les endpoints.</div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-val" id="stat-total">—</div>
+            <div class="stat-label">Articles</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="stat-api">—</div>
+            <div class="stat-label">Statut API</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="stat-last">—</div>
+            <div class="stat-label">Dernière requête</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick articles preview -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--grey2)">Aperçu articles</div>
+        <button class="btn btn-ghost" style="padding:7px 14px;font-size:10px" onclick="loadHomeArticles()">Actualiser</button>
+      </div>
+      <div id="home-articles-grid" class="articles-grid">
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-icon">◈</div>
+          <p>Configurez l'URL et testez la connexion</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LIST ─────────────────────────────────────────── -->
+    <div class="tab-panel" id="panel-list">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Tous les articles</div>
+          <div class="section-sub">GET /articles · Filtres optionnels par auteur, catégorie, date</div>
+        </div>
+        <span class="method-badge" style="background:rgba(245,245,240,.08);color:var(--grey);border:1px solid var(--border2)">GET</span>
+      </div>
+
+      <div class="filters">
+        <div class="filter-field">
+          <span>Auteur</span>
+          <input id="filter-auteur" type="text" placeholder="ex: Prad Sonkeng"/>
+        </div>
+        <div class="filter-field">
+          <span>Catégorie</span>
+          <input id="filter-categorie" type="text" placeholder="ex: Technologie"/>
+        </div>
+        <div class="filter-field">
+          <span>Date</span>
+          <input id="filter-date" type="date"/>
+        </div>
+      </div>
+
+      <div class="btn-actions">
+        <button class="btn btn-primary" onclick="fetchAll()">
+          <span id="fetchAllBtn">Exécuter</span>
+        </button>
+        <button class="btn btn-ghost" onclick="clearFilters()">Réinitialiser filtres</button>
+      </div>
+
+      <div class="response-panel" id="list-response" style="display:none">
+        <div class="response-header">
+          <span>Réponse</span>
+          <div class="response-status" id="list-status"></div>
+        </div>
+        <div class="response-body" id="list-body"></div>
+      </div>
+
+      <div id="list-articles" class="articles-grid" style="margin-top:24px"></div>
+    </div>
+
+    <!-- ── SEARCH ────────────────────────────────────────── -->
+    <div class="tab-panel" id="panel-search">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Recherche</div>
+          <div class="section-sub">GET /articles/search?query= · Recherche dans titre et contenu</div>
+        </div>
+        <span class="method-badge" style="background:rgba(245,245,240,.08);color:var(--grey);border:1px solid var(--border2)">GET</span>
+      </div>
+
+      <div class="search-bar">
+        <input id="search-query" type="text" placeholder="Entrer un mot-clé…" onkeydown="if(event.key==='Enter')doSearch()"/>
+        <button class="btn btn-primary" onclick="doSearch()">
+          <span id="searchBtn">Rechercher</span>
+        </button>
+      </div>
+
+      <div class="response-panel" id="search-response" style="display:none">
+        <div class="response-header">
+          <span>Réponse</span>
+          <div class="response-status" id="search-status"></div>
+        </div>
+        <div class="response-body" id="search-body"></div>
+      </div>
+
+      <div id="search-articles" class="articles-grid" style="margin-top:24px"></div>
+    </div>
+
+    <!-- ── GET BY ID ─────────────────────────────────────── -->
+    <div class="tab-panel" id="panel-getById">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Article par ID</div>
+          <div class="section-sub">GET /articles/:id · Récupère un article précis</div>
+        </div>
+        <span class="method-badge" style="background:rgba(245,245,240,.08);color:var(--grey);border:1px solid var(--border2)">GET</span>
+      </div>
+
+      <div class="form-grid" style="max-width:300px">
+        <div class="form-field">
+          <label>ID de l'article</label>
+          <input id="get-id" type="number" placeholder="ex: 1" min="1"/>
+        </div>
+      </div>
+
+      <div class="btn-actions">
+        <button class="btn btn-primary" onclick="fetchById()">Exécuter</button>
+      </div>
+
+      <div class="response-panel" id="getById-response" style="display:none">
+        <div class="response-header">
+          <span>Réponse</span>
+          <div class="response-status" id="getById-status"></div>
+        </div>
+        <div class="response-body" id="getById-body"></div>
+      </div>
+    </div>
+
+    <!-- ── CREATE ────────────────────────────────────────── -->
+    <div class="tab-panel" id="panel-create">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Créer un article</div>
+          <div class="section-sub">POST /articles · Tous les champs sont requis</div>
+        </div>
+        <span class="method-badge" style="background:rgba(59,255,138,.1);color:var(--green);border:1px solid rgba(59,255,138,.3)">POST</span>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Titre *</label>
+          <input id="c-titre" type="text" placeholder="Titre de l'article"/>
+        </div>
+        <div class="form-field">
+          <label>Auteur *</label>
+          <input id="c-auteur" type="text" placeholder="Nom de l'auteur"/>
+        </div>
+      </div>
+
+      <div class="form-grid single" style="margin-bottom:16px">
+        <div class="form-field">
+          <label>Contenu *</label>
+          <textarea id="c-contenu" placeholder="Contenu de l'article…"></textarea>
+        </div>
+      </div>
+
+      <div class="form-grid triple">
+        <div class="form-field">
+          <label>Date *</label>
+          <input id="c-date" type="date"/>
+        </div>
+        <div class="form-field">
+          <label>Catégorie *</label>
+          <input id="c-categorie" type="text" placeholder="ex: Technologie"/>
+        </div>
+        <div class="form-field">
+          <label>Tags *</label>
+          <input id="c-tags" type="text" placeholder="ex: node,api,rest"/>
+        </div>
+      </div>
+
+      <div class="btn-actions">
+        <button class="btn btn-primary" onclick="createArticle()">
+          <span id="createBtn">Publier l'article</span>
+        </button>
+        <button class="btn btn-ghost" onclick="clearCreateForm()">Effacer</button>
+      </div>
+
+      <div class="response-panel" id="create-response" style="display:none">
+        <div class="response-header">
+          <span>Réponse</span>
+          <div class="response-status" id="create-status"></div>
+        </div>
+        <div class="response-body" id="create-body"></div>
+      </div>
+    </div>
+
+    <!-- ── UPDATE ────────────────────────────────────────── -->
+    <div class="tab-panel" id="panel-update">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Mettre à jour</div>
+          <div class="section-sub">PUT /articles/:id · Modifie titre, contenu, catégorie ou tags</div>
+        </div>
+        <span class="method-badge" style="background:rgba(255,200,59,.1);color:#ffc83b;border:1px solid rgba(255,200,59,.3)">PUT</span>
+      </div>
+
+      <div class="form-grid" style="margin-bottom:16px">
+        <div class="form-field">
+          <label>ID de l'article *</label>
+          <input id="u-id" type="number" placeholder="ex: 1" min="1"/>
+        </div>
+        <div class="form-field">
+          <label>Nouveau titre</label>
+          <input id="u-titre" type="text" placeholder="Laisser vide pour ne pas modifier"/>
+        </div>
+      </div>
+
+      <div class="form-grid single" style="margin-bottom:16px">
+        <div class="form-field">
+          <label>Nouveau contenu</label>
+          <textarea id="u-contenu" placeholder="Laisser vide pour ne pas modifier" style="min-height:80px"></textarea>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Nouvelle catégorie</label>
+          <input id="u-categorie" type="text" placeholder="Laisser vide pour ne pas modifier"/>
+        </div>
+        <div class="form-field">
+          <label>Nouveaux tags</label>
+          <input id="u-tags" type="text" placeholder="Laisser vide pour ne pas modifier"/>
+        </div>
+      </div>
+
+      <div class="btn-actions">
+        <button class="btn btn-primary" onclick="updateArticle()">
+          <span id="updateBtn">Mettre à jour</span>
+        </button>
+        <button class="btn btn-ghost" onclick="clearUpdateForm()">Effacer</button>
+      </div>
+
+      <div class="response-panel" id="update-response" style="display:none">
+        <div class="response-header">
+          <span>Réponse</span>
+          <div class="response-status" id="update-status"></div>
+        </div>
+        <div class="response-body" id="update-body"></div>
+      </div>
+    </div>
+
+    <!-- ── DELETE ────────────────────────────────────────── -->
+    <div class="tab-panel" id="panel-delete">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Supprimer</div>
+          <div class="section-sub">DELETE /articles/:id · Suppression définitive</div>
+        </div>
+        <span class="method-badge" style="background:rgba(255,59,59,.1);color:var(--red);border:1px solid rgba(255,59,59,.3)">DEL</span>
+      </div>
+
+      <div class="form-grid" style="max-width:300px">
+        <div class="form-field">
+          <label>ID de l'article *</label>
+          <input id="d-id" type="number" placeholder="ex: 1" min="1"/>
+        </div>
+      </div>
+
+      <div style="padding:14px 16px;border:1px solid rgba(255,59,59,.2);border-radius:var(--radius);background:rgba(255,59,59,.04);margin:16px 0;font-size:11px;color:var(--red);letter-spacing:.5px">
+        ⚠ Cette action est irréversible.
+      </div>
+
+      <div class="btn-actions">
+        <button class="btn btn-danger" onclick="deleteArticle()">
+          <span id="deleteBtn">Supprimer définitivement</span>
+        </button>
+      </div>
+
+      <div class="response-panel" id="delete-response" style="display:none">
+        <div class="response-header">
+          <span>Réponse</span>
+          <div class="response-status" id="delete-status"></div>
+        </div>
+        <div class="response-body" id="delete-body"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── MODAL UPDATE ──────────────────────────────────────── -->
+<div class="modal-overlay" id="modal-update-overlay">
+  <div class="modal">
+    <div class="modal-title">
+      Modifier l'article <span id="modal-article-id" style="color:var(--grey);font-weight:400;font-size:14px"></span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-grid single" style="margin-bottom:14px">
+      <div class="form-field">
+        <label>Titre</label>
+        <input id="modal-titre" type="text"/>
+      </div>
+    </div>
+    <div class="form-grid single" style="margin-bottom:14px">
+      <div class="form-field">
+        <label>Contenu</label>
+        <textarea id="modal-contenu" style="min-height:100px"></textarea>
+      </div>
+    </div>
+    <div class="form-grid" style="margin-bottom:20px">
+      <div class="form-field">
+        <label>Catégorie</label>
+        <input id="modal-categorie" type="text"/>
+      </div>
+      <div class="form-field">
+        <label>Tags</label>
+        <input id="modal-tags" type="text"/>
+      </div>
+    </div>
+    <div class="btn-actions">
+      <button class="btn btn-primary" onclick="submitModalUpdate()">Sauvegarder</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ─────────────────────────────────────────────── -->
+<div class="toast-container" id="toasts"></div>
+
+<script>
+// ────────────────────────────────────────────────────────
+// CORE UTILS
+// ────────────────────────────────────────────────────────
+
+const getBase = () => document.getElementById('baseUrl').value.replace(/\/$/, '');
+
+let lastRequestTime = null;
+let totalArticles = 0;
+
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function setStatus(online, text = '') {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = 'status-dot ' + (online === true ? 'online' : online === false ? 'error' : '');
+  txt.textContent = text || (online === true ? 'connecté' : online === false ? 'erreur' : 'non connecté');
+  document.getElementById('stat-api').textContent = online === true ? 'OK' : online === false ? 'KO' : '—';
+}
+
+function setLoading(btnId, loading) {
+  const el = document.getElementById(btnId);
+  if (!el) return;
+  el.innerHTML = loading ? '<span class="loading"></span>' : el.dataset.orig || el.textContent;
+  if (loading && !el.dataset.orig) el.dataset.orig = el.textContent;
+  if (!loading) delete el.dataset.orig;
+}
+
+function showResponse(prefix, status, data, ms) {
+  const panel = document.getElementById(`${prefix}-response`);
+  const body  = document.getElementById(`${prefix}-body`);
+  const stat  = document.getElementById(`${prefix}-status`);
+  panel.style.display = 'block';
+  const cls = status >= 500 ? 'status-5xx' : status >= 400 ? 'status-4xx' : 'status-2xx';
+  stat.innerHTML = `<span class="status-code ${cls}">${status}</span> <span style="color:var(--grey2)">${ms}ms</span>`;
+  body.textContent = JSON.stringify(data, null, 2);
+}
+
+async function apiFetch(path, opts = {}) {
+  const t0 = Date.now();
+  try {
+    const r = await fetch(getBase() + path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts
+    });
+    const ms = Date.now() - t0;
+    let data;
+    try { data = await r.json(); } catch { data = null; }
+    lastRequestTime = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    document.getElementById('stat-last').textContent = lastRequestTime;
+    return { ok: r.ok, status: r.status, data, ms };
+  } catch(e) {
+    return { ok: false, status: 0, data: { error: 'Connexion impossible — vérifiez l\'URL et que le CORS est activé sur votre API.' }, ms: Date.now() - t0 };
+  }
+}
+
+// ────────────────────────────────────────────────────────
+// NAVIGATION
+// ────────────────────────────────────────────────────────
+
+function showPanel(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`panel-${id}`).classList.add('active');
+  const tabBtn = document.getElementById(`tab-${id}`);
+  if (tabBtn) tabBtn.classList.add('active');
+}
+
+// ────────────────────────────────────────────────────────
+// PING
+// ────────────────────────────────────────────────────────
+
+async function pingApi() {
+  document.getElementById('pingBtn').innerHTML = '<span class="loading"></span>';
+  const res = await apiFetch('/articles');
+  document.getElementById('pingBtn').textContent = 'Tester la connexion';
+  if (res.ok || res.status === 404) {
+    setStatus(true, 'connecté');
+    toast('API accessible ✓');
+    if (res.data && res.data.articles) {
+      totalArticles = res.data.articles.length;
+      document.getElementById('stat-total').textContent = totalArticles;
+    }
+    loadHomeArticles();
+  } else {
+    setStatus(false, 'erreur ' + res.status);
+    toast(res.data?.error || 'Impossible de contacter l\'API', 'error');
+  }
+}
+
+// ────────────────────────────────────────────────────────
+// HOME
+// ────────────────────────────────────────────────────────
+
+async function loadHomeArticles() {
+  const res = await apiFetch('/articles');
+  const grid = document.getElementById('home-articles-grid');
+  if (res.ok && res.data?.articles?.length) {
+    totalArticles = res.data.articles.length;
+    document.getElementById('stat-total').textContent = totalArticles;
+    grid.innerHTML = res.data.articles.slice(0,6).map(a => articleCard(a, true)).join('');
+  } else {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-icon">◈</div>
+      <p>Aucun article trouvé</p>
+    </div>`;
+  }
+}
+
+// ────────────────────────────────────────────────────────
+// ARTICLE CARD
+// ────────────────────────────────────────────────────────
+
+function articleCard(a, compact = false) {
+  const tags = (a.tags || '').split(',').map(t =>
+    `<span class="tag">${t.trim()}</span>`
+  ).join('');
+
+  return `<div class="article-card">
+    <div class="article-card-meta">
+      <span class="tag">${a.categorie || ''}</span>
+      ${tags}
+      <span class="article-id">#${a.id}</span>
+    </div>
+    <h3>${escHtml(a.titre)}</h3>
+    <p>${escHtml(a.contenu)}</p>
+    <div class="article-card-footer">
+      <span class="article-author">✎ ${escHtml(a.auteur)}</span>
+      <span class="article-date">${a.date || ''}</span>
+    </div>
+    ${!compact ? `<div class="card-actions">
+      <button class="card-btn edit" onclick="openModalUpdate(${a.id},'${escAttr(a.titre)}','${escAttr(a.contenu)}','${escAttr(a.categorie)}','${escAttr(a.tags)}')">Modifier</button>
+      <button class="card-btn del" onclick="quickDelete(${a.id})">Supprimer</button>
+    </div>` : ''}
+  </div>`;
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function escAttr(s) {
+  return String(s||'').replace(/'/g,"\\'").replace(/\n/g,' ');
+}
+
+// ────────────────────────────────────────────────────────
+// FETCH ALL
+// ────────────────────────────────────────────────────────
+
+async function fetchAll() {
+  setLoading('fetchAllBtn', true);
+  const params = new URLSearchParams();
+  const auteur    = document.getElementById('filter-auteur').value.trim();
+  const categorie = document.getElementById('filter-categorie').value.trim();
+  const date      = document.getElementById('filter-date').value;
+  if (auteur)    params.append('auteur', auteur);
+  if (categorie) params.append('categorie', categorie);
+  if (date)      params.append('date', date);
+  const qs = params.toString() ? '?' + params.toString() : '';
+  const res = await apiFetch('/articles' + qs);
+  setLoading('fetchAllBtn', false);
+  showResponse('list', res.status, res.data, res.ms);
+  const grid = document.getElementById('list-articles');
+  if (res.ok && res.data?.articles?.length) {
+    grid.innerHTML = res.data.articles.map(a => articleCard(a)).join('');
+  } else {
+    grid.innerHTML = '';
+    toast(res.data?.error || 'Aucun résultat', 'error');
+  }
+}
+
+function clearFilters() {
+  ['filter-auteur','filter-categorie','filter-date'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+// ────────────────────────────────────────────────────────
+// SEARCH
+// ────────────────────────────────────────────────────────
+
+async function doSearch() {
+  const q = document.getElementById('search-query').value.trim();
+  if (!q) { toast('Entrez un mot-clé', 'error'); return; }
+  setLoading('searchBtn', true);
+  const res = await apiFetch('/articles/search?query=' + encodeURIComponent(q));
+  setLoading('searchBtn', false);
+  showResponse('search', res.status, res.data, res.ms);
+  const grid = document.getElementById('search-articles');
+  if (res.ok && res.data?.articles?.length) {
+    grid.innerHTML = res.data.articles.map(a => articleCard(a)).join('');
+  } else {
+    grid.innerHTML = '';
+    toast(res.data?.error || 'Aucun résultat', 'error');
+  }
+}
+
+// ────────────────────────────────────────────────────────
+// GET BY ID
+// ────────────────────────────────────────────────────────
+
+async function fetchById() {
+  const id = document.getElementById('get-id').value;
+  if (!id) { toast('Entrez un ID', 'error'); return; }
+  const res = await apiFetch('/articles/' + id);
+  showResponse('getById', res.status, res.data, res.ms);
+  if (!res.ok) toast(res.data?.error || 'Erreur', 'error');
+  else toast('Article trouvé ✓');
+}
+
+// ────────────────────────────────────────────────────────
+// CREATE
+// ────────────────────────────────────────────────────────
+
+async function createArticle() {
+  const body = {
+    titre:     document.getElementById('c-titre').value.trim(),
+    contenu:   document.getElementById('c-contenu').value.trim(),
+    auteur:    document.getElementById('c-auteur').value.trim(),
+    date:      document.getElementById('c-date').value,
+    categorie: document.getElementById('c-categorie').value.trim(),
+    tags:      document.getElementById('c-tags').value.trim()
+  };
+  const missing = Object.entries(body).filter(([,v]) => !v).map(([k]) => k);
+  if (missing.length) { toast('Champs manquants : ' + missing.join(', '), 'error'); return; }
+  setLoading('createBtn', true);
+  const res = await apiFetch('/articles', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+  setLoading('createBtn', false);
+  showResponse('create', res.status, res.data, res.ms);
+  if (res.ok) {
+    toast(`Article créé — ID: ${res.data?.articleId} ✓`);
+    clearCreateForm();
+    totalArticles++;
+    document.getElementById('stat-total').textContent = totalArticles;
+  } else {
+    toast(res.data?.error || 'Erreur lors de la création', 'error');
+  }
+}
+
+function clearCreateForm() {
+  ['c-titre','c-contenu','c-auteur','c-date','c-categorie','c-tags'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+// ────────────────────────────────────────────────────────
+// UPDATE
+// ────────────────────────────────────────────────────────
+
+async function updateArticle() {
+  const id = document.getElementById('u-id').value;
+  if (!id) { toast('Entrez un ID', 'error'); return; }
+  const body = {};
+  const titre     = document.getElementById('u-titre').value.trim();
+  const contenu   = document.getElementById('u-contenu').value.trim();
+  const categorie = document.getElementById('u-categorie').value.trim();
+  const tags      = document.getElementById('u-tags').value.trim();
+  if (titre)     body.titre     = titre;
+  if (contenu)   body.contenu   = contenu;
+  if (categorie) body.categorie = categorie;
+  if (tags)      body.tags      = tags;
+  if (!Object.keys(body).length) { toast('Aucun champ à mettre à jour', 'error'); return; }
+  setLoading('updateBtn', true);
+  const res = await apiFetch('/articles/' + id, { method: 'PUT', body: JSON.stringify(body) });
+  setLoading('updateBtn', false);
+  showResponse('update', res.status, res.data, res.ms);
+  if (res.ok) toast('Article mis à jour ✓');
+  else toast(res.data?.error || 'Erreur', 'error');
+}
+
+function clearUpdateForm() {
+  ['u-id','u-titre','u-contenu','u-categorie','u-tags'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+// ────────────────────────────────────────────────────────
+// DELETE
+// ────────────────────────────────────────────────────────
+
+async function deleteArticle() {
+  const id = document.getElementById('d-id').value;
+  if (!id) { toast('Entrez un ID', 'error'); return; }
+  if (!confirm(`Supprimer définitivement l'article #${id} ?`)) return;
+  setLoading('deleteBtn', true);
+  const res = await apiFetch('/articles/' + id, { method: 'DELETE' });
+  setLoading('deleteBtn', false);
+  showResponse('delete', res.status, res.data, res.ms);
+  if (res.ok) {
+    toast(`Article #${id} supprimé ✓`);
+    totalArticles = Math.max(0, totalArticles - 1);
+    document.getElementById('stat-total').textContent = totalArticles;
+    document.getElementById('d-id').value = '';
+  } else {
+    toast(res.data?.error || 'Erreur', 'error');
+  }
+}
+
+async function quickDelete(id) {
+  if (!confirm(`Supprimer l'article #${id} ?`)) return;
+  const res = await apiFetch('/articles/' + id, { method: 'DELETE' });
+  if (res.ok) {
+    toast(`Article #${id} supprimé ✓`);
+    loadHomeArticles();
+  } else {
+    toast(res.data?.error || 'Erreur', 'error');
+  }
+}
+
+// ────────────────────────────────────────────────────────
+// MODAL UPDATE
+// ────────────────────────────────────────────────────────
+
+let modalId = null;
+
+function openModalUpdate(id, titre, contenu, categorie, tags) {
+  modalId = id;
+  document.getElementById('modal-article-id').textContent = `#${id}`;
+  document.getElementById('modal-titre').value     = titre;
+  document.getElementById('modal-contenu').value   = contenu;
+  document.getElementById('modal-categorie').value = categorie;
+  document.getElementById('modal-tags').value      = tags;
+  document.getElementById('modal-update-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-update-overlay').classList.remove('open');
+  modalId = null;
+}
+
+async function submitModalUpdate() {
+  if (!modalId) return;
+  const body = {
+    titre:     document.getElementById('modal-titre').value.trim(),
+    contenu:   document.getElementById('modal-contenu').value.trim(),
+    categorie: document.getElementById('modal-categorie').value.trim(),
+    tags:      document.getElementById('modal-tags').value.trim()
+  };
+  const res = await apiFetch('/articles/' + modalId, { method: 'PUT', body: JSON.stringify(body) });
+  if (res.ok) {
+    toast('Article mis à jour ✓');
+    closeModal();
+    loadHomeArticles();
+  } else {
+    toast(res.data?.error || 'Erreur', 'error');
+  }
+}
+
+document.getElementById('modal-update-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ────────────────────────────────────────────────────────
+// INIT — set today's date as default
+// ────────────────────────────────────────────────────────
+
+document.getElementById('c-date').value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>

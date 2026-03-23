@@ -1,8 +1,9 @@
 //imports
+require('dotenv').config();
 var express = require('express');
 var bodyParser = require('body-parser');
 var apiRouter = require('./apiRouter').router;
-const {swaggerUi, swaggerSpec} = require('./swagger');
+const cors = require('cors');
 
 // instantiate server
 var server = express();
@@ -11,22 +12,21 @@ var server = express();
 server.use(bodyParser.urlencoded({ extended: true }));
 server.use(bodyParser.json());
 
-// Swagger UI
-server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
+// CORS configuration
+server.use(cors({
+	origin: '*', // Allow all origins
+	methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow specific methods
+}));
 
 // configure routes
-server.get('/', function(req, res) {
-	res.setHeader('Content-Type', 'text/html');
-	res.status(200).send('<h1>Lancement du serveur de gestion des articles</h1>' +
-						 '<p><a href="/api-docs">📖 Documentation Swagger</a></p>'
-	);
+server.get('/', (req, res) => {
+	res.json({ status: 'ok', app: 'ApiGestArt', by: 'SKHP' });
 });
 
 server.use('/api/' ,apiRouter);
 
 //Launch server
-server.listen(8080, function() {
-	console.log('Server lancer sur le port 8080');
-	console.log('Documentation Swagger : http://localhost:8080/api-docs');
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+	console.log(`Server lancer sur le port ${PORT}`);
 });
