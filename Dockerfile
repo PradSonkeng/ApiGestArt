@@ -18,4 +18,3 @@ EXPOSE 8080
 
 # Démarrer l'application
 CMD ["nodemon", "server.js"]
-```
