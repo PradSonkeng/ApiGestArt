@@ -23,7 +23,7 @@ const options = {
             }
         },
         servers: [
-            { url: 'http://localhost:8080/api', description: 'Serveur local' }
+            { url: 'http://localhost:8081/api', description: 'Serveur local' }
         ],
         components: {
             schemas: {

@@ -42,7 +42,7 @@ npx sequelize-cli db:migrate
 node server.js
 ```
 
-Le serveur démarre sur **http://localhost:8080**.
+Le serveur démarre sur **http://localhost:8081**.
 
 ---
 
@@ -51,7 +51,7 @@ Le serveur démarre sur **http://localhost:8080**.
 Une fois le serveur lancé, la documentation interactive Swagger est disponible à :
 
 ```
-http://localhost:8080/api-docs
+http://localhost:8081/api-docs
 ```
 
 > Pour activer Swagger, installer les dépendances supplémentaires :
@@ -64,7 +64,7 @@ http://localhost:8080/api-docs
 
 ## Endpoints
 
-Base URL : `http://localhost:8080/api`
+Base URL : `http://localhost:8081/api`
 
 | Méthode | Endpoint              | Description                              |
 |---------|-----------------------|------------------------------------------|
@@ -82,7 +82,7 @@ Base URL : `http://localhost:8080/api`
 ### Créer un article
 
 ```bash
-curl -X POST http://localhost:8080/api/articles \
+curl -X POST http://localhost:8081/api/articles \
   -H "Content-Type: application/json" \
   -d '{
     "titre": "Mon premier article",
@@ -104,12 +104,12 @@ curl -X POST http://localhost:8080/api/articles \
 ### Lister tous les articles
 
 ```bash
-curl http://localhost:8080/api/articles
+curl http://localhost:8081/api/articles
 ```
 
 **Avec filtres** :
 ```bash
-curl "http://localhost:8080/api/articles?auteur=Prad%20Sonkeng&categorie=Technologie"
+curl "http://localhost:8081/api/articles?auteur=Prad%20Sonkeng&categorie=Technologie"
 ```
 
 **Réponse (201)** :
@@ -134,7 +134,7 @@ curl "http://localhost:8080/api/articles?auteur=Prad%20Sonkeng&categorie=Technol
 ### Récupérer un article par ID
 
 ```bash
-curl http://localhost:8080/api/articles/1
+curl http://localhost:8081/api/articles/1
 ```
 
 **Réponse (201)** :
@@ -155,7 +155,7 @@ curl http://localhost:8080/api/articles/1
 ### Rechercher des articles
 
 ```bash
-curl "http://localhost:8080/api/articles/search?query=node"
+curl "http://localhost:8081/api/articles/search?query=node"
 ```
 
 **Réponse (201)** :
@@ -172,7 +172,7 @@ curl "http://localhost:8080/api/articles/search?query=node"
 ### Mettre à jour un article
 
 ```bash
-curl -X PUT http://localhost:8080/api/articles/1 \
+curl -X PUT http://localhost:8081/api/articles/1 \
   -H "Content-Type: application/json" \
   -d '{
     "titre": "Titre mis à jour",
@@ -187,7 +187,7 @@ curl -X PUT http://localhost:8080/api/articles/1 \
 ### Supprimer un article
 
 ```bash
-curl -X DELETE http://localhost:8080/api/articles/1
+curl -X DELETE http://localhost:8081/api/articles/1
 ```
 
 **Réponse (201)** :

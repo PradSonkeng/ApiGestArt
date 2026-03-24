@@ -51,7 +51,7 @@ server.get('/', function(req, res) {
 
 server.use('/api/', apiRouter);
 
-var PORT = process.env.PORT || 8080;
+var PORT = process.env.PORT || 8081;
 server.listen(PORT, function() {
   console.log('Server lancé sur le port ' + PORT);
 });
